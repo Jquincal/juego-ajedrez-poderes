@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Power Game ⚡</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0a0a0f;
+      font-family: 'Rajdhani', sans-serif;
+      color: #e0e0ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(120, 40, 200, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(0, 180, 255, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 80%, rgba(255, 60, 130, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 20px 20px 10px;
+    }
+
+    header h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.4rem, 4vw, 2.4rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #7b2eff 0%, #00cfff 50%, #ff3d8e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+      letter-spacing: 2px;
+    }
+
+    header p {
+      font-size: 0.85rem;
+      color: #8888aa;
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    #game-wrapper {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 10px 16px 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    #game-container canvas {
+      border-radius: 12px;
+      box-shadow:
+        0 0 0 2px rgba(123, 46, 255, 0.5),
+        0 0 30px rgba(123, 46, 255, 0.3),
+        0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Side panel */
+    #panel {
+      width: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel-card {
+      background: rgba(20, 15, 40, 0.85);
+      border: 1px solid rgba(123, 46, 255, 0.3);
+      border-radius: 12px;
+      padding: 14px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .panel-card h3 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      color: #7b2eff;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    #turnDisplay {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    #turnDisplay.white {
+      color: #f0f0ff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    #turnDisplay.black {
+      color: #aa88ff;
+      text-shadow: 0 0 10px rgba(170, 136, 255, 0.5);
+    }
+
+    #selectedInfo {
+      font-size: 0.85rem;
+      color: #aaaacc;
+      min-height: 20px;
+    }
+
+    #pieceTitle {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #e0e0ff;
+      display: none;
+    }
+
+    #abilityName {
+      font-size: 0.8rem;
+      color: #00cfff;
+      margin-top: 2px;
+      display: none;
+    }
+
+    #cooldownInfo {
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: #888;
+      display: none;
+    }
+
+    #cooldownBar {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+      display: none;
+    }
+
+    #cooldownFill {
+      height: 100%;
+      background: linear-gradient(90deg, #7b2eff, #00cfff);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    #abilityBtn {
+      display: none;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      background: linear-gradient(135deg, #7b2eff, #ff3d8e);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 20px rgba(123, 46, 255, 0.4);
+    }
+
+    #abilityBtn:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 30px rgba(123, 46, 255, 0.7);
+    }
+
+    #abilityBtn:active {
+      transform: scale(0.97);
+    }
+
+    /* Cannon direction picker */
+    #cannonPicker {
+      display: none;
+      margin-top: 10px;
+    }
+
+    #cannonPicker p {
+      font-size: 0.75rem;
+      color: #ffb703;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .dir-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+
+    .dir-btn {
+      padding: 8px;
+      background: rgba(255, 183, 3, 0.15);
+      border: 1px solid rgba(255, 183, 3, 0.4);
+      border-radius: 6px;
+      color: #ffb703;
+      font-size: 1rem;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .dir-btn:hover {
+      background: rgba(255, 183, 3, 0.35);
+    }
+
+    .dir-btn.spacer {
+      visibility: hidden;
+    }
+
+    /* Log */
+    #log {
+      font-size: 0.75rem;
+      color: #8888aa;
+      max-height: 140px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    #log::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    #log::-webkit-scrollbar-thumb {
+      background: rgba(123, 46, 255, 0.5);
+      border-radius: 2px;
+    }
+
+    .log-entry {
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .log-white {
+      color: #c8c8ff;
+    }
+
+    .log-black {
+      color: #aa88ff;
+    }
+
+    .log-ability {
+      color: #ff3d8e;
+    }
+
+    .log-capture {
+      color: #ff6b35;
+    }
+
+    .log-shield {
+      color: #ffd60a;
+    }
+
+    /* Ability legend */
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      color: #9999bb;
+      margin-bottom: 5px;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-piece {
+      color: #e0e0ff;
+      font-weight: 600;
+    }
+
+    /* Status bar */
+    #statusBar {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 700px;
+      padding: 0 16px 16px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: #666688;
+    }
+
+    /* Game over overlay */
+    #gameOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      backdrop-filter: blur(8px);
+    }
+
+    #gameOverlay.show {
+      display: flex;
+    }
+
+    #overlayContent {
+      text-align: center;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    #overlayTitle {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffd60a, #ff6b35);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    #overlaySubtitle {
+      font-size: 1.2rem;
+      color: #aaaacc;
+      margin-bottom: 30px;
+    }
+
+    #restartBtn {
+      padding: 14px 36px;
+      background: linear-gradient(135deg, #7b2eff, #00cfff);
+      border: none;
+      border-radius: 50px;
+      color: white;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 30px rgba(123, 46, 255, 0.5);
+    }
+
+    #restartBtn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 50px rgba(123, 46, 255, 0.8);
+    }
+
+    /* Particles canvas overlay */
+    #particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 99;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>⚡ CHESS POWER GAME</h1>
+    <p>Ajedrez con superpoderes — Domina el tablero</p>
+  </header>
+
+  <div id="game-wrapper">
+    <div id="game-container"></div>
+
+    <div id="panel">
+      <!-- Turn info -->
+      <div class="panel-card">
+        <h3>⚔ Turno Actual</h3>
+        <div id="turnDisplay" class="white">BLANCAS</div>
+      </div>
+
+      <!-- Selected piece info -->
+      <div class="panel-card">
+        <h3>🎯 Pieza Seleccionada</h3>
+        <div id="selectedInfo">Ninguna</div>
+        <div id="pieceTitle"></div>
+        <div id="abilityName"></div>
+        <div id="cooldownInfo"></div>
+        <div id="cooldownBar">
+          <div id="cooldownFill"></div>
+        </div>
+        <button id="abilityBtn">⚡ USAR PODER</button>
+
+        <!-- Cannon direction picker -->
+        <div id="cannonPicker">
+          <p>🎯 Elegir dirección del cañón:</p>
+          <div class="dir-grid">
+            <div class="dir-btn spacer"></div>
+            <div class="dir-btn" data-dr="-1" data-dc="0">↑</div>
+            <div class="dir-btn spacer"></div>
+            <div class="dir-btn" data-dr="0" data-dc="-1">←</div>
+            <div class="dir-btn spacer"></div>
+            <div class="dir-btn" data-dr="0" data-dc="1">→</div>
+            <div class="dir-btn spacer"></div>
+            <div class="dir-btn" data-dr="1" data-dc="0">↓</div>
+            <div class="dir-btn spacer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ability legend -->
+      <div class="panel-card">
+        <h3>📖 Poderes</h3>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#ff6b35"></div><span><span class="legend-piece">Peón</span> — Golpe
+            lateral</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#ffb703"></div><span><span class="legend-piece">Caballo</span> —
+            Explosión 3x3</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#f72585"></div><span><span class="legend-piece">Alfil</span> — Rayo
+            diagonal</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#e63946"></div><span><span class="legend-piece">Torre</span> —
+            Cañonazo</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#06ffa5"></div><span><span class="legend-piece">Reina</span> — Onda
+            expansiva</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#ffd60a"></div><span><span class="legend-piece">Rey</span> — Escudo
+            (2t)</span>
+        </div>
+      </div>
+
+      <!-- Log -->
+      <div class="panel-card">
+        <h3>📜 Historial</h3>
+        <div id="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="statusBar">SELECCIONA UNA PIEZA • BARRA ESPACIADORA O BOTÓN PARA USAR PODER</div>
+
+  <!-- Game Over Overlay -->
+  <div id="gameOverlay">
+    <div id="overlayContent">
+      <div id="overlayTitle">¡VICTORIA!</div>
+      <div id="overlaySubtitle" id="overlaySubtitle"></div>
+      <button id="restartBtn">⚡ NUEVA PARTIDA</button>
+    </div>
+  </div>
+
+  <canvas id="particles"></canvas>
+
+  <script>
+    // =====================================================
+    // PARTICLE SYSTEM (decorative)
+    // =====================================================
+    (function () {
+      const canvas = document.getElementById('particles');
+      const ctx = canvas.getContext('2d');
+      const particles = [];
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      for (let i = 0; i < 60; i++) {
+        particles.push({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          r: Math.random() * 1.5 + 0.5,
+          a: Math.random() * 0.4 + 0.1,
+          color: ['#7b2eff', '#00cfff', '#ff3d8e'][Math.floor(Math.random() * 3)]
+        });
+      }
+
+      function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x = canvas.width;
+          if (p.x > canvas.width) p.x = 0;
+          if (p.y < 0) p.y = canvas.height;
+          if (p.y > canvas.height) p.y = 0;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = p.a;
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(animateParticles);
+      }
+      animateParticles();
+    })();
+
+    // =====================================================
+    // AUDIO
+    // =====================================================
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function getAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+      return audioCtx;
+    }
+
+    function playTone(freq, duration, type = 'square', vol = 0.15) {
+      try {
+        const ctx = getAudio();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.5, ctx.currentTime + duration);
+        gain.gain.setValueAtTime(vol, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) { }
+    }
+
+    function soundMove() { playTone(440, 0.08, 'sine', 0.1); }
+    function soundCapture() { playTone(200, 0.2, 'sawtooth', 0.15); setTimeout(() => playTone(150, 0.15, 'sawtooth', 0.1), 80); }
+    function soundAbility() { playTone(880, 0.05, 'square', 0.1); setTimeout(() => playTone(660, 0.1, 'square', 0.1), 60); setTimeout(() => playTone(440, 0.2, 'square', 0.1), 140); }
+    function soundShield() { playTone(550, 0.15, 'sine', 0.12); setTimeout(() => playTone(820, 0.2, 'sine', 0.1), 100); }
+    function soundGameOver() { playTone(440, 0.3, 'sawtooth', 0.2); setTimeout(() => playTone(330, 0.3, 'sawtooth', 0.2), 250); setTimeout(() => playTone(220, 0.5, 'sawtooth', 0.2), 500); }
+
+    // =====================================================
+    // PHASER GAME
+    // =====================================================
+    const TILE_SIZE = 72;
+    const BOARD_SIZE = 8;
+    const BOARD_PIXEL = TILE_SIZE * BOARD_SIZE;
+
+    const PIECE_EMOJIS = {
+      king: '♔', queen: '♕', rook: '♖', bishop: '♗', knight: '♘', pawn: '♙',
+    };
+    const PIECE_EMOJIS_BLACK = {
+      king: '♚', queen: '♛', rook: '♜', bishop: '♝', knight: '♞', pawn: '♟',
+    };
+
+    const ABILITIES = {
+      pawn: { name: 'lateral_strike', label: 'Golpe Lateral', cooldown: 3, color: 0xff6b35 },
+      knight: { name: 'explosion', label: 'Explosión 3×3', cooldown: 4, color: 0xffb703 },
+      bishop: { name: 'diagonal_beam', label: 'Rayo Diagonal', cooldown: 3, color: 0xf72585 },
+      rook: { name: 'cannon_blast', label: 'Cañonazo', cooldown: 4, color: 0xe63946 },
+      queen: { name: 'shockwave', label: 'Onda Expansiva', cooldown: 5, color: 0x06ffa5 },
+      king: { name: 'shield', label: 'Escudo Real', cooldown: 6, color: 0xffd60a },
+    };
+
+    const COLOR_LIGHT = 0xdfd0c0;
+    const COLOR_DARK = 0x7a5c44;
+    const COLOR_WHITE_PIECE = 0xffffff;
+    const COLOR_BLACK_PIECE = 0x2a1060;
+    const COLOR_SELECT = 0x7b2eff;
+    const COLOR_MOVE = 0x00cfff;
+    const COLOR_SHIELD_GLOW = 0xffd60a;
+
+    // =====================================================
+    // LOG HELPER
+    // =====================================================
+    function addLog(text, cls = '') {
+      const log = document.getElementById('log');
+      const div = document.createElement('div');
+      div.className = 'log-entry ' + cls;
+      div.textContent = text;
+      log.prepend(div);
+      if (log.children.length > 30) log.lastChild.remove();
+    }
+
+    // =====================================================
+    // PIECE CLASS
+    // =====================================================
+    class Piece {
+      constructor(scene, type, color, row, col) {
+        this.scene = scene;
+        this.type = type;
+        this.color = color;
+        this.row = row;
+        this.col = col;
+        this.cooldown = 0;
+        this.shield = false;
+        this.shieldDuration = 0;
+        this.abilityDef = { ...ABILITIES[type] };
+
+        this._createGraphics();
+      }
+
+      _createGraphics() {
+        const x = this.col * TILE_SIZE + TILE_SIZE / 2;
+        const y = this.row * TILE_SIZE + TILE_SIZE / 2;
+        const isWhite = this.color === 'white';
+        const radius = TILE_SIZE * 0.38;
+
+        // Shadow
+        this.shadow = this.scene.add.circle(x + 3, y + 3, radius, 0x000000, 0.3);
+        this.shadow.setDepth(2);
+
+        // Main circle
+        this.circle = this.scene.add.circle(x, y, radius, isWhite ? COLOR_WHITE_PIECE : COLOR_BLACK_PIECE);
+        this.circle.setDepth(3);
+        this.circle.setStrokeStyle(2, isWhite ? 0xaaaacc : 0x9966ff, 1);
+
+        // Emoji
+        const emoji = isWhite ? PIECE_EMOJIS[this.type] : PIECE_EMOJIS_BLACK[this.type];
+        this.text = this.scene.add.text(x, y, emoji, {
+          fontSize: Math.floor(TILE_SIZE * 0.44) + 'px',
+          align: 'center',
+        }).setOrigin(0.5).setDepth(4);
+
+        // Cooldown badge
+        this.cdBadge = this.scene.add.circle(x + radius * 0.65, y - radius * 0.65, 10, 0xff3d8e);
+        this.cdBadge.setDepth(5);
+        this.cdBadge.setVisible(false);
+        this.cdText = this.scene.add.text(x + radius * 0.65, y - radius * 0.65, '', {
+          fontSize: '11px', fontFamily: 'Orbitron', color: '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(6);
+
+        // Shield ring
+        this.shieldRing = this.scene.add.circle(x, y, radius + 6, COLOR_SHIELD_GLOW, 0);
+        this.shieldRing.setStrokeStyle(3, COLOR_SHIELD_GLOW, 0.9);
+        this.shieldRing.setDepth(2.5);
+        this.shieldRing.setVisible(false);
+
+        this._tweenShield = null;
+      }
+
+      updatePosition(animate = true) {
+        const tx = this.col * TILE_SIZE + TILE_SIZE / 2;
+        const ty = this.row * TILE_SIZE + TILE_SIZE / 2;
+        const radius = TILE_SIZE * 0.38;
+
+        if (animate) {
+          this.scene.tweens.add({
+            targets: [this.circle, this.text, this.shadow, this.shieldRing, this.cdBadge, this.cdText],
+            x: (target) => {
+              if (target === this.shadow) return tx + 3;
+              if (target === this.cdBadge || target === this.cdText) return tx + radius * 0.65;
+              return tx;
+            },
+            y: (target) => {
+              if (target === this.shadow) return ty + 3;
+              if (target === this.cdBadge || target === this.cdText) return ty - radius * 0.65;
+              return ty;
+            },
+            duration: 180,
+            ease: 'Power2'
+          });
+        } else {
+          this.circle.x = tx;
+          this.circle.y = ty;
+          this.text.x = tx;
+          this.text.y = ty;
+          this.shadow.x = tx + 3;
+          this.shadow.y = ty + 3;
+          this.shieldRing.x = tx;
+          this.shieldRing.y = ty;
+          this.cdBadge.x = tx + radius * 0.65;
+          this.cdBadge.y = ty - radius * 0.65;
+          this.cdText.x = tx + radius * 0.65;
+          this.cdText.y = ty - radius * 0.65;
+        }
+      }
+
+      updateCooldownBadge() {
+        if (this.cooldown > 0) {
+          this.cdBadge.setVisible(true);
+          this.cdText.setVisible(true);
+          this.cdText.setText(this.cooldown);
+        } else {
+          this.cdBadge.setVisible(false);
+          this.cdText.setVisible(false);
+        }
+      }
+
+      setShield(active) {
+        this.shield = active;
+        this.shieldRing.setVisible(active);
+        if (active && !this._tweenShield) {
+          this._tweenShield = this.scene.tweens.add({
+            targets: this.shieldRing,
+            scaleX: 1.15,
+            scaleY: 1.15,
+            yoyo: true,
+            repeat: -1,
+            duration: 600,
+            ease: 'Sine.easeInOut'
+          });
+        } else if (!active && this._tweenShield) {
+          this._tweenShield.stop();
+          this._tweenShield = null;
+          this.shieldRing.setScale(1);
+        }
+      }
+
+      destroy() {
+        const objs = [this.circle, this.text, this.shadow, this.cdBadge, this.cdText, this.shieldRing];
+        this.scene.tweens.add({
+          targets: objs,
+          alpha: 0,
+          scaleX: 2,
+          scaleY: 2,
+          duration: 250,
+          ease: 'Power3',
+          onComplete: () => objs.forEach(o => o.destroy())
+        });
+      }
+    }
+
+    // =====================================================
+    // PHASER SCENE
+    // =====================================================
+    class ChessGame extends Phaser.Scene {
+      constructor() {
+        super('ChessGame');
+      }
+
+      create() {
+        this.TILE_SIZE = TILE_SIZE;
+        this.pieces = [];
+        this.selectedPiece = null;
+        this.validMoves = [];
+        this.currentPlayer = 'white';
+        this.gameState = 'playing';
+        this.abilityMode = false;
+        this.cannonMode = false;
+        this.highlights = [];
+        this.moveHighlights = [];
+
+        this._drawBoard();
+        this._initPieces();
+        this._setupInput();
+        this._setupUI();
+        this.updateUI();
+      }
+
+      // -----------------------------------------------
+      // BOARD DRAWING
+      // -----------------------------------------------
+      _drawBoard() {
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const light = (r + c) % 2 === 0;
+            const rect = this.add.rectangle(
+              c * TILE_SIZE + TILE_SIZE / 2,
+              r * TILE_SIZE + TILE_SIZE / 2,
+              TILE_SIZE, TILE_SIZE,
+              light ? COLOR_LIGHT : COLOR_DARK
+            );
+            rect.setDepth(0);
+
+            // Coordinate labels
+            if (c === 0) {
+              this.add.text(4, r * TILE_SIZE + 4, String(8 - r), {
+                fontSize: '11px', fontFamily: 'Rajdhani', color: light ? '#7a5c44' : '#dfd0c0', fontStyle: 'bold'
+              }).setDepth(1).setAlpha(0.7);
+            }
+            if (r === 7) {
+              const letters = 'abcdefgh';
+              this.add.text(c * TILE_SIZE + TILE_SIZE - 12, BOARD_PIXEL - 14, letters[c], {
+                fontSize: '11px', fontFamily: 'Rajdhani', color: light ? '#7a5c44' : '#dfd0c0', fontStyle: 'bold'
+              }).setDepth(1).setAlpha(0.7);
+            }
+          }
+        }
+
+        // Board border
+        const border = this.add.rectangle(
+          BOARD_PIXEL / 2, BOARD_PIXEL / 2,
+          BOARD_PIXEL, BOARD_PIXEL
+        ).setStrokeStyle(3, 0x7b2eff, 0.8).setFillStyle(0x000000, 0).setDepth(10);
+      }
+
+      // -----------------------------------------------
+      // PIECE INITIALIZATION
+      // -----------------------------------------------
+      _initPieces() {
+        const layout = ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'];
+
+        // Black pieces
+        layout.forEach((t, c) => this._addPiece(t, 'black', 0, c));
+        for (let c = 0; c < 8; c++) this._addPiece('pawn', 'black', 1, c);
+
+        // White pieces
+        for (let c = 0; c < 8; c++) this._addPiece('pawn', 'white', 6, c);
+        layout.forEach((t, c) => this._addPiece(t, 'white', 7, c));
+      }
+
+      _addPiece(type, color, row, col) {
+        const p = new Piece(this, type, color, row, col);
+        this.pieces.push(p);
+        return p;
+      }
+
+      // -----------------------------------------------
+      // INPUT
+      // -----------------------------------------------
+      _setupInput() {
+        this.input.on('pointerdown', (pointer) => {
+          if (this.gameState !== 'playing') return;
+          const col = Math.floor(pointer.x / TILE_SIZE);
+          const row = Math.floor(pointer.y / TILE_SIZE);
+          if (col < 0 || col >= 8 || row < 0 || row >= 8) return;
+          this.handleClick(row, col);
+        });
+
+        this.input.keyboard.on('keydown-SPACE', () => {
+          if (this.selectedPiece && this.selectedPiece.cooldown === 0 && !this.abilityMode && !this.cannonMode) {
+            this.startAbility(this.selectedPiece);
+          }
+        });
+
+        this.input.keyboard.on('keydown-ESC', () => {
+          this.clearSelection();
+          this.cancelAbility();
+        });
+      }
+
+      _setupUI() {
+        // Ability button
+        document.getElementById('abilityBtn').addEventListener('click', () => {
+          if (this.selectedPiece && this.selectedPiece.cooldown === 0 && !this.abilityMode && !this.cannonMode) {
+            this.startAbility(this.selectedPiece);
+          }
+        });
+
+        // Cannon direction buttons
+        document.querySelectorAll('.dir-btn:not(.spacer)').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (!this.cannonMode || !this.selectedPiece) return;
+            const dr = parseInt(btn.dataset.dr);
+            const dc = parseInt(btn.dataset.dc);
+            this.fireCannonBlast(this.selectedPiece, { dr, dc });
+            document.getElementById('cannonPicker').style.display = 'none';
+            this.cannonMode = false;
+          });
+        });
+
+        // Restart
+        document.getElementById('restartBtn').addEventListener('click', () => {
+          document.getElementById('gameOverlay').classList.remove('show');
+          this.scene.restart();
+        });
+      }
+
+      // -----------------------------------------------
+      // CLICK HANDLER
+      // -----------------------------------------------
+      handleClick(row, col) {
+        if (this.cannonMode) return; // Handled by direction buttons
+
+        if (this.abilityMode) {
+          // No click-target needed for current abilities (they auto-fire)
+          return;
+        }
+
+        const clickedPiece = this.pieces.find(p => p.row === row && p.col === col);
+
+        if (this.selectedPiece) {
+          // Try to move
+          const isValid = this.validMoves.some(m => m.row === row && m.col === col);
+
+          if (isValid) {
+            this.tryMovePiece(row, col);
+            return;
+          }
+
+          // Click own piece → re-select
+          if (clickedPiece && clickedPiece.color === this.currentPlayer) {
+            this.clearSelection();
+            this.selectPiece(clickedPiece);
+            return;
+          }
+
+          this.clearSelection();
+          return;
+        }
+
+        // Select
+        if (clickedPiece && clickedPiece.color === this.currentPlayer) {
+          this.selectPiece(clickedPiece);
+        }
+      }
+
+      // -----------------------------------------------
+      // SELECTION
+      // -----------------------------------------------
+      selectPiece(piece) {
+        this.selectedPiece = piece;
+        this.validMoves = this.getValidMoves(piece);
+        this._drawHighlights();
+        this.updateUI();
+      }
+
+      clearSelection() {
+        this.selectedPiece = null;
+        this.validMoves = [];
+        this._clearHighlights();
+        this.abilityMode = false;
+        this.cannonMode = false;
+        document.getElementById('cannonPicker').style.display = 'none';
+        this.updateUI();
+      }
+
+      cancelAbility() {
+        this.abilityMode = false;
+        this.cannonMode = false;
+        document.getElementById('cannonPicker').style.display = 'none';
+        this._clearHighlights();
+        if (this.selectedPiece) {
+          this.validMoves = this.getValidMoves(this.selectedPiece);
+          this._drawHighlights();
+        }
+        this.updateUI();
+      }
+
+      // -----------------------------------------------
+      // HIGHLIGHTS
+      // -----------------------------------------------
+      _drawHighlights() {
+        this._clearHighlights();
+
+        // Selected tile
+        if (this.selectedPiece) {
+          const h = this.add.rectangle(
+            this.selectedPiece.col * TILE_SIZE + TILE_SIZE / 2,
+            this.selectedPiece.row * TILE_SIZE + TILE_SIZE / 2,
+            TILE_SIZE, TILE_SIZE, COLOR_SELECT, 0.4
+          ).setDepth(1);
+          this.highlights.push(h);
+
+          const hBorder = this.add.rectangle(
+            this.selectedPiece.col * TILE_SIZE + TILE_SIZE / 2,
+            this.selectedPiece.row * TILE_SIZE + TILE_SIZE / 2,
+            TILE_SIZE, TILE_SIZE
+          ).setStrokeStyle(3, COLOR_SELECT, 1).setFillStyle(0, 0).setDepth(1.5);
+          this.highlights.push(hBorder);
+        }
+
+        // Valid moves
+        this.validMoves.forEach(m => {
+          const hasPiece = this.pieces.find(p => p.row === m.row && p.col === m.col);
+          const color = hasPiece ? 0xff3d8e : COLOR_MOVE;
+          const dot = this.add.circle(
+            m.col * TILE_SIZE + TILE_SIZE / 2,
+            m.row * TILE_SIZE + TILE_SIZE / 2,
+            hasPiece ? TILE_SIZE * 0.38 : TILE_SIZE * 0.18,
+            color, 0.55
+          ).setDepth(1.2);
+          this.moveHighlights.push(dot);
+        });
+        this.highlights.push(...this.moveHighlights);
+        this.moveHighlights = [];
+      }
+
+      _clearHighlights() {
+        this.highlights.forEach(h => h.destroy());
+        this.highlights = [];
+      }
+
+      // -----------------------------------------------
+      // MOVE GENERATION
+      // -----------------------------------------------
+      getValidMoves(piece) {
+        const moves = [];
+        const { row, col, type, color } = piece;
+        const dir = color === 'white' ? -1 : 1;
+
+        const addIfValid = (r, c, canCapture = true, mustCapture = false) => {
+          if (!this.isInBounds(r, c)) return;
+          const target = this.pieces.find(p => p.row === r && p.col === c);
+          if (target) {
+            if (canCapture && target.color !== color) moves.push({ row: r, col: c });
+          } else {
+            if (!mustCapture) moves.push({ row: r, col: c });
+          }
+        };
+
+        const addLine = (dr, dc) => {
+          for (let i = 1; i < 8; i++) {
+            const r = row + dr * i, c = col + dc * i;
+            if (!this.isInBounds(r, c)) break;
+            const target = this.pieces.find(p => p.row === r && p.col === c);
+            if (target) {
+              if (target.color !== color) moves.push({ row: r, col: c });
+              break;
+            }
+            moves.push({ row: r, col: c });
+          }
+        };
+
+        switch (type) {
+          case 'pawn':
+            addIfValid(row + dir, col, false);
+            // Double advance from starting row
+            if ((color === 'white' && row === 6) || (color === 'black' && row === 1)) {
+              const blocking = this.pieces.find(p => p.row === row + dir && p.col === col);
+              if (!blocking) addIfValid(row + dir * 2, col, false);
+            }
+            addIfValid(row + dir, col - 1, true, true);
+            addIfValid(row + dir, col + 1, true, true);
+            break;
+
+          case 'knight':
+            [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]].forEach(([dr, dc]) => addIfValid(row + dr, col + dc));
+            break;
+
+          case 'bishop':
+            [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([dr, dc]) => addLine(dr, dc));
+            break;
+
+          case 'rook':
+            [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => addLine(dr, dc));
+            break;
+
+          case 'queen':
+            [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]].forEach(([dr, dc]) => addLine(dr, dc));
+            break;
+
+          case 'king':
+            [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]].forEach(([dr, dc]) => addIfValid(row + dr, col + dc));
+            break;
+        }
+
+        return moves;
+      }
+
+      // -----------------------------------------------
+      // MOVE PIECE
+      // -----------------------------------------------
+      tryMovePiece(row, col) {
+        const captured = this.pieces.find(p => p.row === row && p.col === col);
+
+        if (captured) {
+          if (captured.shield) {
+            addLog(`🛡️ Escudo bloquea el ataque!`, 'log-shield');
+            this.flashShield(captured);
+            this.clearSelection();
+            return;
+          }
+          this.destroyPiece(captured);
+          soundCapture();
+          addLog(`💥 ${this.currentPlayer === 'white' ? '⬜' : '⬛'} captura ${captured.type}`, 'log-capture');
+
+          if (captured.type === 'king') {
+            this.triggerGameOver(this.currentPlayer);
+            return;
+          }
+        } else {
+          soundMove();
+        }
+
+        const p = this.selectedPiece;
+        p.row = row;
+        p.col = col;
+        p.updatePosition(true);
+        addLog(`♟ ${this.currentPlayer === 'white' ? '⬜' : '⬛'} mueve ${p.type}`, this.currentPlayer === 'white' ? 'log-white' : 'log-black');
+
+        this.clearSelection();
+        this.endTurn();
+      }
+
+      // -----------------------------------------------
+      // ABILITY SYSTEM
+      // -----------------------------------------------
+      startAbility(piece) {
+        if (piece.type === 'rook') {
+          // Cannon needs direction selection
+          this.abilityMode = true;
+          this.cannonMode = true;
+          document.getElementById('cannonPicker').style.display = 'block';
+          addLog(`🎯 Elige dirección del cañón...`, 'log-ability');
+          return;
+        }
+
+        // All other abilities fire immediately
+        this.abilityMode = true;
+        this.activateAbility(piece);
+      }
+
+      activateAbility(piece) {
+        soundAbility();
+        addLog(`⚡ ${this.currentPlayer === 'white' ? '⬜' : '⬛'} ${piece.type} usa: ${piece.abilityDef.label}`, 'log-ability');
+
+        switch (piece.abilityDef.name) {
+          case 'lateral_strike': this.ability_pawn(piece); break;
+          case 'explosion': this.ability_knight(piece); break;
+          case 'diagonal_beam': this.ability_bishop(piece); break;
+          case 'shockwave': this.ability_queen(piece); break;
+          case 'shield': this.ability_king(piece); break;
+        }
+
+        piece.cooldown = piece.abilityDef.cooldown;
+        piece.updateCooldownBadge();
+        this.clearSelection();
+        this.endTurn();
+      }
+
+      // PAWN: lateral strike
+      ability_pawn(piece) {
+        const targets = [
+          { row: piece.row, col: piece.col - 1 },
+          { row: piece.row, col: piece.col + 1 },
+        ];
+        this.showAbilityEffect(targets, 0xff6b35);
+        targets.forEach(pos => {
+          if (!this.isInBounds(pos.row, pos.col)) return;
+          const enemy = this.pieces.find(p => p.row === pos.row && p.col === pos.col && p.color !== piece.color);
+          if (enemy) {
+            if (enemy.shield) { this.flashShield(enemy); return; }
+            this.destroyPiece(enemy);
+            soundCapture();
+            addLog(`💥 Golpe lateral destruye ${enemy.type}`, 'log-capture');
+            if (enemy.type === 'king') { this.triggerGameOver(this.currentPlayer); }
+          }
+        });
+      }
+
+      // KNIGHT: explosion 3x3
+      ability_knight(piece) {
+        const dirs = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+        const targets = dirs
+          .map(([dr, dc]) => ({ row: piece.row + dr, col: piece.col + dc }))
+          .filter(p => this.isInBounds(p.row, p.col));
+
+        this.showAbilityEffect(targets, 0xffb703);
+        targets.forEach(pos => {
+          const enemy = this.pieces.find(p => p.row === pos.row && p.col === pos.col && p.color !== piece.color);
+          if (enemy) {
+            if (enemy.shield) { this.flashShield(enemy); return; }
+            this.destroyPiece(enemy);
+            soundCapture();
+            addLog(`💥 Explosión destruye ${enemy.type}`, 'log-capture');
+            if (enemy.type === 'king') { this.triggerGameOver(this.currentPlayer); }
+          }
+        });
+      }
+
+      // BISHOP: diagonal beam (all 4 diagonals)
+      ability_bishop(piece) {
+        const targets = [];
+        [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([dr, dc]) => {
+          for (let i = 1; i < 8; i++) {
+            const r = piece.row + dr * i;
+            const c = piece.col + dc * i;
+            if (!this.isInBounds(r, c)) break;
+            targets.push({ row: r, col: c });
+          }
+        });
+        this.showAbilityEffect(targets, 0xf72585);
+        targets.forEach(pos => {
+          const enemy = this.pieces.find(p => p.row === pos.row && p.col === pos.col && p.color !== piece.color);
+          if (enemy) {
+            if (enemy.shield) { this.flashShield(enemy); return; }
+            this.destroyPiece(enemy);
+            soundCapture();
+            addLog(`💥 Rayo diagonal destruye ${enemy.type}`, 'log-capture');
+            if (enemy.type === 'king') { this.triggerGameOver(this.currentPlayer); }
+          }
+        });
+      }
+
+      // ROOK: cannon blast (directional)
+      fireCannonBlast(piece, direction) {
+        soundAbility();
+        addLog(`💣 Torre cañón dispara!`, 'log-ability');
+
+        const targets = [];
+        for (let i = 1; i < 8; i++) {
+          const r = piece.row + direction.dr * i;
+          const c = piece.col + direction.dc * i;
+          if (!this.isInBounds(r, c)) break;
+          targets.push({ row: r, col: c });
+        }
+        this.showAbilityEffect(targets, 0xe63946);
+        targets.forEach(pos => {
+          const enemy = this.pieces.find(p => p.row === pos.row && p.col === pos.col && p.color !== piece.color);
+          if (enemy) {
+            if (enemy.shield) { this.flashShield(enemy); return; }
+            this.destroyPiece(enemy);
+            soundCapture();
+            addLog(`💥 Cañonazo destruye ${enemy.type}`, 'log-capture');
+            if (enemy.type === 'king') { this.triggerGameOver(this.currentPlayer); }
+          }
+        });
+
+        piece.cooldown = piece.abilityDef.cooldown;
+        piece.updateCooldownBadge();
+        this.selectedPiece = piece; // keep ref for clearSelection
+        this.clearSelection();
+        this.endTurn();
+      }
+
+      // QUEEN: shockwave
+      ability_queen(piece) {
+        const dirs = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+        const targets = dirs
+          .map(([dr, dc]) => ({ row: piece.row + dr, col: piece.col + dc }))
+          .filter(p => this.isInBounds(p.row, p.col));
+
+        this.showAbilityEffect(targets, 0x06ffa5);
+        targets.forEach(pos => {
+          const enemy = this.pieces.find(p => p.row === pos.row && p.col === pos.col && p.color !== piece.color);
+          if (enemy) {
+            if (enemy.shield) { this.flashShield(enemy); return; }
+            this.destroyPiece(enemy);
+            soundCapture();
+            addLog(`💥 Onda expansiva destruye ${enemy.type}`, 'log-capture');
+            if (enemy.type === 'king') { this.triggerGameOver(this.currentPlayer); }
+          }
+        });
+      }
+
+      // KING: shield
+      ability_king(piece) {
+        soundShield();
+        piece.shieldDuration = 10;
+        piece.setShield(true);
+        addLog(`🛡️ Rey activa escudo (10 turnos)`, 'log-shield');
+      }
+
+      // -----------------------------------------------
+      // VISUAL EFFECTS
+      // -----------------------------------------------
+      showAbilityEffect(targets, color) {
+        targets.forEach(pos => {
+          const x = pos.col * TILE_SIZE + TILE_SIZE / 2;
+          const y = pos.row * TILE_SIZE + TILE_SIZE / 2;
+
+          // Tile flash
+          const flash = this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color, 0.5).setDepth(8);
+
+          // Ripple circle
+          const ripple = this.add.circle(x, y, 8, color, 0.9).setDepth(9);
+
+          this.tweens.add({
+            targets: flash,
+            alpha: 0,
+            duration: 450,
+            ease: 'Power2',
+            onComplete: () => flash.destroy()
+          });
+
+          this.tweens.add({
+            targets: ripple,
+            alpha: 0,
+            scaleX: 4,
+            scaleY: 4,
+            duration: 400,
+            ease: 'Power2',
+            onComplete: () => ripple.destroy()
+          });
+        });
+      }
+
+      flashShield(piece) {
+        soundShield();
+        const ring = this.add.circle(
+          piece.col * TILE_SIZE + TILE_SIZE / 2,
+          piece.row * TILE_SIZE + TILE_SIZE / 2,
+          TILE_SIZE * 0.48, 0xffd60a, 0.8
+        ).setDepth(8);
+        this.tweens.add({
+          targets: ring,
+          alpha: 0,
+          scaleX: 2,
+          scaleY: 2,
+          duration: 350,
+          ease: 'Power2',
+          onComplete: () => ring.destroy()
+        });
+        addLog(`🛡️ Escudo bloquea!`, 'log-shield');
+      }
+
+      // -----------------------------------------------
+      // HELPER: destroy piece
+      // -----------------------------------------------
+      destroyPiece(piece) {
+        piece.destroy();
+        this.pieces = this.pieces.filter(p => p !== piece);
+      }
+
+      // -----------------------------------------------
+      // TURN MANAGEMENT
+      // -----------------------------------------------
+      endTurn() {
+        this.pieces.forEach(p => {
+          if (p.cooldown > 0) {
+            p.cooldown--;
+            p.updateCooldownBadge();
+          }
+          if (p.shield && p.shieldDuration > 0) {
+            p.shieldDuration--;
+            if (p.shieldDuration === 0) {
+              p.setShield(false);
+              addLog(`🛡️ Escudo del rey expiró`, 'log-shield');
+            }
+          }
+        });
+
+        this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+        this.updateUI();
+      }
+
+      // -----------------------------------------------
+      // UI
+      // -----------------------------------------------
+      updateUI() {
+        const turnEl = document.getElementById('turnDisplay');
+        if (this.currentPlayer === 'white') {
+          turnEl.textContent = '⬜ BLANCAS';
+          turnEl.className = 'white';
+        } else {
+          turnEl.textContent = '⬛ NEGRAS';
+          turnEl.className = 'black';
+        }
+
+        const p = this.selectedPiece;
+        const infoEl = document.getElementById('selectedInfo');
+        const titleEl = document.getElementById('pieceTitle');
+        const abilityEl = document.getElementById('abilityName');
+        const cdInfo = document.getElementById('cooldownInfo');
+        const cdBar = document.getElementById('cooldownBar');
+        const cdFill = document.getElementById('cooldownFill');
+        const btn = document.getElementById('abilityBtn');
+
+        if (p) {
+          infoEl.textContent = '';
+          titleEl.style.display = 'block';
+          titleEl.textContent = `${p.color === 'white' ? '⬜' : '⬛'} ${p.type.toUpperCase()}`;
+          abilityEl.style.display = 'block';
+          abilityEl.textContent = `⚡ ${p.abilityDef.label}`;
+
+          const maxCd = p.abilityDef.cooldown;
+          if (p.cooldown > 0) {
+            cdInfo.style.display = 'block';
+            cdInfo.textContent = `Cooldown: ${p.cooldown} turno${p.cooldown !== 1 ? 's' : ''}`;
+            cdBar.style.display = 'block';
+            const pct = ((maxCd - p.cooldown) / maxCd) * 100;
+            cdFill.style.width = pct + '%';
+            btn.style.display = 'none';
+          } else {
+            cdInfo.style.display = 'none';
+            cdBar.style.display = 'none';
+            if (p.color === this.currentPlayer) {
+              btn.style.display = 'block';
+              btn.textContent = `⚡ ${p.abilityDef.label}`;
+            } else {
+              btn.style.display = 'none';
+            }
+          }
+        } else {
+          infoEl.textContent = this.abilityMode ? '🎯 Modo habilidad activo' : 'Ninguna';
+          titleEl.style.display = 'none';
+          abilityEl.style.display = 'none';
+          cdInfo.style.display = 'none';
+          cdBar.style.display = 'none';
+          btn.style.display = 'none';
+        }
+      }
+
+      // -----------------------------------------------
+      // GAME OVER
+      // -----------------------------------------------
+      triggerGameOver(winner) {
+        this.gameState = 'gameOver';
+        soundGameOver();
+
+        const overlay = document.getElementById('gameOverlay');
+        document.getElementById('overlayTitle').textContent = winner === 'white' ? '⬜ BLANCAS GANAN' : '⬛ NEGRAS GANAN';
+        document.getElementById('overlaySubtitle').textContent = `¡El rey enemigo ha caído!`;
+        overlay.classList.add('show');
+
+        addLog(`🏆 ${winner === 'white' ? 'Blancas' : 'Negras'} ganan la partida!`, 'log-ability');
+      }
+
+      // -----------------------------------------------
+      // UTILITY
+      // -----------------------------------------------
+      isInBounds(row, col) {
+        return row >= 0 && row < 8 && col >= 0 && col < 8;
+      }
+
+      update() {
+        // Subtle rotation on selected piece
+        if (this.selectedPiece) {
+          // Pulse effect via shieldRing tween (handled in Piece class)
+        }
+      }
+    }
+
+    // =====================================================
+    // PHASER CONFIG
+    // =====================================================
+    const config = {
+      type: Phaser.AUTO,
+      width: BOARD_PIXEL,
+      height: BOARD_PIXEL,
+      backgroundColor: '#1a1228',
+      parent: 'game-container',
+      scene: ChessGame,
+      render: {
+        antialias: true,
+        pixelArt: false,
+      },
+    };
+
+    const game = new Phaser.Game(config);
+  </script>
+</body>
+
+</html>
